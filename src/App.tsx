@@ -138,7 +138,15 @@ function App() {
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [faqs, setFaqs] = useState<FAQ[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [teamMembers, setTeamMembers] = useState([
+    {
+      id: 1,
+      name: 'Daniel Gonzalez Esquerra',
+      role: 'CEO and trafficker digital Melxagency',
+      image: '/Daniel Imagen ok.jpeg',
+      bio: 'Visionario líder con más de 10 años de experiencia en marketing digital y estrategias de crecimiento. Daniel ha transformado numerosas empresas a través de campañas innovadoras y un enfoque centrado en resultados. Su pasión por la tecnología y el marketing lo convierte en el motor impulsor de MelxAgency, siempre buscando nuevas formas de conectar marcas con sus audiencias de manera auténtica y efectiva.'
+    }
+  ]);
 
   // Estados para modales de administración
   const [showBlogModal, setShowBlogModal] = useState(false);
@@ -158,6 +166,7 @@ function App() {
   const [teamForm, setTeamForm] = useState({
     firstName: '', lastName: '', specialty: '', photo: '', bio: ''
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   // Filtros
   const [leadFilter, setLeadFilter] = useState('all');
@@ -469,21 +478,27 @@ function App() {
 
   const handleTeamSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Create object URL for the uploaded image
+    const imageUrl = imageFile ? URL.createObjectURL(imageFile) : '';
+
     if (editingTeam) {
       setTeamMembers(teamMembers.map(member => 
         member.id === editingTeam.id 
-          ? { ...editingTeam, ...teamForm }
+          ? { ...editingTeam, ...teamForm, photo: imageUrl || editingTeam.photo }
           : member
       ));
       setEditingTeam(null);
     } else {
       const newMember: TeamMember = {
         id: Date.now().toString(),
-        ...teamForm
+        ...teamForm,
+        photo: imageUrl
       };
       setTeamMembers([...teamMembers, newMember]);
     }
-    setTeamForm({ firstName: '', lastName: '', specialty: '', photo: '', bio: '' });
+    setTeamForm({ firstName: '', lastName: '', specialty: '', bio: '' });
+    setImageFile(null);
     setShowTeamModal(false);
   };
 
@@ -1313,15 +1328,25 @@ function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">URL de Foto</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Foto del Miembro
+                    </label>
                     <input
-                      type="url"
-                      value={teamForm.photo}
-                      onChange={(e) => setTeamForm({...teamForm, photo: e.target.value})}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setImageFile(file);
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0e368d] focus:border-transparent"
-                      placeholder="https://ejemplo.com/foto.jpg"
-                      required
                     />
+                    {imageFile && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Archivo seleccionado: {imageFile.name}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Biografía</label>
@@ -1340,6 +1365,7 @@ function App() {
                         setShowTeamModal(false);
                         setEditingTeam(null);
                         setTeamForm({ firstName: '', lastName: '', specialty: '', photo: '', bio: '' });
+                        setImageFile(null);
                       }}
                       className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     >
@@ -1347,7 +1373,8 @@ function App() {
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-[#0e368d] text-white rounded-lg hover:bg-[#0c2d75] transition-colors"
+                      disabled={!teamForm.firstName || !teamForm.specialty || (!imageFile && !editingTeam)}
+                      className="px-4 py-2 bg-[#0e368d] text-white rounded-lg hover:bg-[#0c2d75] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {editingTeam ? 'Actualizar' : 'Crear'}
                     </button>
